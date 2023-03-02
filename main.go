@@ -57,6 +57,8 @@ func main() {
 	api.POST("/users", userHandler.RegisterUser) // handler->user.go
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailable)
+	api.POST("/avatars", userHandler.UploadAvatar)
+
 	router.Run()
 
 	//userInput := user.RegisterUserInput{}

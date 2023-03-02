@@ -49,11 +49,13 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
+
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
+	userHandler := handler.NewUserHandler(userService)
 	api.POST("/users", userHandler.RegisterUser) // handler->user.go
+	api.POST("/sessions", userHandler.Login)
 	router.Run()
 
 	//userInput := user.RegisterUserInput{}

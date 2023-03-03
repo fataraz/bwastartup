@@ -16,7 +16,6 @@ type Service interface {
 type service struct {
 	// mapping sturct input ke struct user
 	// simpan struct user melalui repository
-
 	repository Repository // user->repository.go
 }
 

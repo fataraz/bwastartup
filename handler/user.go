@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bwastartup/auth"
 	"bwastartup/helper"
 	"bwastartup/user"
 	"fmt"
@@ -10,24 +11,22 @@ import (
 
 type userHandler struct {
 	userService user.Service // user->service.go
+	authService auth.Service
 }
 
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 func (h *userHandler) RegisterUser(c *gin.Context) {
-	// tangkap input dari user
-	// map input dari user ke struct RegisterUserInput
-	// struct di atas kita passing sebagai parameter
+	var input user.RegisterUserInput
 
-	var input user.RegisterUserInput // user->input.go
-	err := c.ShouldBindJSON(&input)  // untuk validasi
-
+	err := c.ShouldBindJSON(&input)
 	// Start Error validation response
 	if err != nil {
-		errors := helper.FormatError(err)
+		errors := helper.FormatValidationError(err)
 		errorMessage := gin.H{"errors": errors}
+
 		response := helper.APIResponse("Register account failed", http.StatusUnprocessableEntity, "error", errorMessage)
 		c.JSON(http.StatusBadRequest, response)
 		return
@@ -41,25 +40,24 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// token, err := h.jwtService.GenerateToken()
-	formatter := user.FormatUser(newUser, "TOkenTOken")
+	token, err := h.authService.GenerateToken(newUser.ID)
+	if err != nil {
+		response := helper.APIResponse("Register account failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := user.FormatUser(newUser, token)
 
 	response := helper.APIResponse("Account has been registered", http.StatusOK, "success", formatter)
 
 	c.JSON(http.StatusOK, response)
 }
 func (h *userHandler) Login(c *gin.Context) {
-	// USER memasukan input (email & password)
-	// input ditangkap handler
-	// mapping dari input user ke input struct
-	// input struct passing service
-	// di service mencari dengan bantuan repository user dengan email x
-	// mencocokan password
 	var input user.LoginInput
 
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		errors := helper.FormatError(err)
+		errors := helper.FormatValidationError(err)
 		errorMessage := gin.H{"errors": errors}
 		response := helper.APIResponse("Login Failed", http.StatusUnprocessableEntity, "error", errorMessage)
 		c.JSON(http.StatusBadRequest, response)
@@ -73,7 +71,13 @@ func (h *userHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	formatter := user.FormatUser(loggedInUser, "TOkenTOken")
+	token, err := h.authService.GenerateToken(loggedInUser.ID)
+	if err != nil {
+		response := helper.APIResponse("Login failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := user.FormatUser(loggedInUser, token)
 	response := helper.APIResponse("Successfuly logged in", http.StatusOK, "success", formatter)
 
 	c.JSON(http.StatusOK, response)
@@ -83,7 +87,7 @@ func (h *userHandler) CheckEmailAvailable(c *gin.Context) {
 	var input user.CheckEmailInput
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		errors := helper.FormatError(err)
+		errors := helper.FormatValidationError(err)
 		errorMessage := gin.H{"errors": errors}
 		response := helper.APIResponse("Email checking failed", http.StatusUnprocessableEntity, "error", errorMessage)
 		c.JSON(http.StatusBadRequest, response)

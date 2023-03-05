@@ -35,6 +35,7 @@ func main() {
 	campaingService := campaign.NewService(campaignRepository)
 
 	router := gin.Default()
+	router.Static("/images", "./images")
 	api := router.Group("/api/v1")
 
 	userHandler := handler.NewUserHandler(userService, authService)

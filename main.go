@@ -20,7 +20,6 @@ func main() {
 	// connect to database mysql
 	dsn := "alesha:Alesha2021!@#@tcp(127.0.0.1:3306)/bwastartup?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -30,14 +29,15 @@ func main() {
 	campaignRepository := campaign.NewRepository(db)
 
 	// Service
-	userService := user.NewService(userRepository)
 	authService := auth.NewService()
+	userService := user.NewService(userRepository)
 	campaignService := campaign.NewService(campaignRepository)
 
 	router := gin.Default()
 	router.Static("/images", "./images")
 	api := router.Group("/api/v1")
 
+	// Handler
 	userHandler := handler.NewUserHandler(userService, authService)
 	api.POST("/users", userHandler.RegisterUser) // handler->user.go
 	api.POST("/sessions", userHandler.Login)
@@ -48,6 +48,7 @@ func main() {
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
 	api.GET("/campaigns/:id", campaignHandler.GetCampaign)
 	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
+	api.PUT("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.UpdateCampaign)
 
 	router.Run()
 

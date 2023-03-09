@@ -34,20 +34,6 @@ func main() {
 	authService := auth.NewService()
 	campaignService := campaign.NewService(campaignRepository)
 
-	input := campaign.CreateCampaignInput{}
-	input.Name = "Penggalangan Dana Startup"
-	input.ShortDescription = "Short"
-	input.Description = "Looooong"
-	input.GoalAmount = 100000000
-	input.Perks = "Hadiah satu, Hadiah dua, hadiah tiga"
-	inputUser, _ := userService.GetUserById(15)
-	input.User = inputUser
-
-	_, err = campaignService.CreateCampaign(input)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	router := gin.Default()
 	router.Static("/images", "./images")
 	api := router.Group("/api/v1")
@@ -61,6 +47,7 @@ func main() {
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
 	api.GET("/campaigns/:id", campaignHandler.GetCampaign)
+	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
 
 	router.Run()
 
